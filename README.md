@@ -205,19 +205,3 @@ With more time, the following could be added:
 ## Conclusion
 
 This plugin demonstrates a **modern, scalable, and secure approach** to building a frontend dashboard in WordPress. By leveraging native WordPress features and a React-based UI, the solution is well-suited for long-term maintenance and future expansion.
-
-support-dashboard/
- ├─ support-dashboard.php
- ├─ readme.md
- ├─ assets/
- │   └─ build/
- │       ├─ app.[hash].js
- │       ├─ app.[hash].css
- ├─ src/
- │   ├─ React source (not shipped)
- ├─ includes/
- │   ├─ class-plugin.php
- │   ├─ class-rest.php
- │   ├─ class-tickets.php
- │   ├─ class-profile.php
- │   └─ helpers.php
