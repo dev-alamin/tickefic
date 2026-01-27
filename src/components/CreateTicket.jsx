@@ -69,11 +69,11 @@ const CreateTicket = ({ onTicketCreated }) => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto mb-8">
+    <div className="max-w-2xl mb-8">
       {!isOpen ? (
         <button
           onClick={() => setIsOpen(true)}
-          className="w-full py-4 border-2 border-dashed border-slate-300 rounded-xl flex items-center justify-center gap-2 text-slate-600 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition-all group"
+          className="w-[300px] !py-2 rounded-xl flex items-center justify-center gap-2 text-slate-600 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition-all group"
         >
           <span className="text-xl group-hover:rotate-90 transition-transform">
             ＋

@@ -124,3 +124,71 @@ function tickefic_add_agent_role()
     ]);
 }
 register_activation_hook(__FILE__, 'tickefic_add_agent_role');
+
+function custom_api_check_user_login() {
+    if ( is_user_logged_in() ) {
+        // Get the current user object for more details
+        $current_user = wp_get_current_user();
+        return new WP_REST_Response( array(
+            'logged_in' => true,
+            'user' => [
+                'name'  => $current_user->display_name,
+                'email' => $current_user->user_email
+            ],
+        ), 200 );
+    } else {
+        return new WP_REST_Response( array(
+            'logged_in' => false,
+            'user' => [
+                'name'  => 'Invalid User',
+                'email' => 'Invalid Email'
+            ],
+        ), 200 );
+    }
+}
+
+add_action( 'rest_api_init', function () {
+    register_rest_route( 'tickefic/v1', '/user-status', array(
+        'methods' => 'GET',
+        'callback' => 'custom_api_check_user_login',
+        'permission_callback' => '__return_true', // Publicly accessible to check status
+    ) );
+} );
+
+
+add_action('rest_api_init', function () {
+    register_rest_route('tickefic/v1', '/login', [
+        'methods' => 'POST',
+        'callback' => 'tickefic_rest_login',
+        'permission_callback' => '__return_true',
+    ]);
+});
+
+function tickefic_rest_login($request) {
+    $creds = [
+        'user_login'    => $request->get_param('username'),
+        'user_password' => $request->get_param('password'),
+        'remember'      => true,
+    ];
+
+    $user = wp_signon($creds, false);
+
+    if (is_wp_error($user)) {
+        // This sends a proper JSON error response
+        wp_send_json_error([
+            'message' => __('Invalid credentials.', 'tickefic')
+        ], 403);
+    }
+
+    wp_set_current_user( $user->ID );
+    wp_set_auth_cookie( $user->ID, true );
+
+    // This sends a proper JSON success response
+    return new WP_REST_Response([
+        'success' => true,
+        'user' => [
+            'id' => $user->ID,
+            'name' => $user->display_name,
+        ]
+    ], 200);
+}
