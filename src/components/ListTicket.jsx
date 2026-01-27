@@ -30,7 +30,7 @@ export default function ListTicket({
     if (expandedTicket) {
       setReplies([]);
       apiFetch({
-        path: `http://localhost/devspark/wordpress-backend/wp-json/wp/v2/comments?post=${expandedTicket}&order=asc&_embed`,
+        path: `/wp/v2/comments?post=${expandedTicket}&order=asc&_embed`,
       })
         .then((data) => setReplies(data))
         .catch((err) => console.error("Error fetching replies:", err));
@@ -42,7 +42,7 @@ export default function ListTicket({
     setSubmitting(true);
 
     apiFetch({
-      path: "http://localhost/devspark/wordpress-backend/wp-json/wp/v2/comments",
+      path: "/wp/v2/comments",
       method: "POST",
       data: {
         post: ticketId,

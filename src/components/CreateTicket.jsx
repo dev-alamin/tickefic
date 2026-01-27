@@ -42,7 +42,7 @@ const CreateTicket = ({ onTicketCreated }) => {
 
     try {
       const data = await apiFetch({
-        path: "http://localhost/devspark/wordpress-backend/wp-json/wp/v2/tickefic/", // Relative path
+        path: "/wp/v2/tickefic/", // Relative path
         method: "POST",
         data: formData,
         headers: { "X-WP-Nonce": SupportDashboard.nonce }

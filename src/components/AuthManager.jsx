@@ -21,7 +21,7 @@ const AuthManager = () => {
 
     try {
       const response = await apiFetch({
-        path: "http://localhost/devspark/wordpress-backend/wp-json/tickefic/v1/login",
+        path: "/tickefic/v1/login",
         method: "POST",
         data: {
           username: credentials.username,

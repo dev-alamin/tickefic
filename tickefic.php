@@ -32,7 +32,7 @@ defined( 'ABSPATH' ) || die( 'No script kiddies please!' );
 /**
  * Plugin Constants
  */
-define( 'TICKEFIC_VERSION', '1.0.0' );
+define( 'TICKEFIC_VERSION', WP_DEBUG ? time() : '1.0.0' );
 define( 'TICKEFIC_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'TICKEFIC_PLUGIN_PATH', plugin_dir_path( __FILE__ ) );
 
@@ -61,25 +61,45 @@ register_activation_hook( __FILE__, 'tickefic_activate_plugin' );
  */
 add_action( 'wp_enqueue_scripts', 'support_dashboard_enqueue_assets' );
 function support_dashboard_enqueue_assets() {
+    $handle = 'support-dashboard-app'; // Default handle
+    
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-        wp_enqueue_script( 'support-dashboard-dev', 'http://localhost:5173/src/main.jsx', array( 'wp-element' ), null, true );
-
+        // Ensure the module type is added correctly
         add_filter( 'script_loader_tag', function( $tag, $handle, $src ) {
-            if ( in_array( $handle, array( 'vite-client', 'support-dashboard-dev' ), true ) ) {
+            if ( in_array( $handle, array( 'support-dashboard-dev', 'support-dashboard-app' ), true ) ) {
                 return '<script type="module" src="' . esc_url( $src ) . '"></script>';
             }
             return $tag;
         }, 10, 3 );
+
+        $handle = 'support-dashboard-dev';
+        wp_enqueue_script( $handle, 'http://localhost:5173/src/main.jsx', array( 'wp-element' ), null, true );
     } else {
-        wp_enqueue_script( 'support-dashboard-app', TICKEFIC_PLUGIN_URL . 'assets/build/app.js', array( 'wp-element' ), TICKEFIC_VERSION, true );
+        wp_enqueue_style( 'support-dashboard-style', TICKEFIC_PLUGIN_URL . 'build/assets/index-j4ukVmjD.css', array(), TICKEFIC_VERSION );
+        wp_enqueue_script( $handle, TICKEFIC_PLUGIN_URL . 'dist/assets/build/app.js', array( 'wp-element', 'wp-i18n', 'wp-api-fetch' ), TICKEFIC_VERSION, true );
     }
 
-    wp_enqueue_script( 'tickefic-frontend-script', TICKEFIC_PLUGIN_URL . 'assets/js/script.js', array( 'jquery' ), TICKEFIC_VERSION, true );
-    wp_localize_script( 'tickefic-frontend-script', 'SupportDashboard', array(
-        'nonce' => wp_create_nonce( 'wp_rest' ),
+    // ALWAYS localize to the main app handle so the React app can see it
+    wp_localize_script( $handle, 'SupportDashboard', array(
+        'nonce'   => wp_create_nonce( 'wp_rest' ),
+        'api_url' => esc_url_raw( rest_url( 'support/v1' ) ),
     ) );
 }
 
+add_filter('script_loader_tag', function($tag, $handle, $src) {
+    // List all handles that need to be treated as modules
+    $module_handles = array(
+        'support-dashboard-dev', 
+        'support-dashboard-app'
+    );
+
+    if (in_array($handle, $module_handles, true)) {
+        // Replace the standard script tag with one containing type="module"
+        return '<script type="module" src="' . esc_url($src) . '" id="' . esc_attr($handle) . '-js"></script>';
+    }
+    
+    return $tag;
+}, 10, 3);
 /**
  * Register ticket taxonomy.
  */
