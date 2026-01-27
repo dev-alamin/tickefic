@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Plugin Name: Tickefic
  * Plugin URI:  
@@ -25,170 +24,284 @@
  *
  * Prefix:      tickefic
  */
-
-defined('ABSPATH') || die('No script kiddies please!');
-
-define('TICKEFIC_VERSION', '1.0.0');
-define('TICKEFIC_PLUGIN', __FILE__);
-define('TICKEFIC_PLUGIN_URL', plugin_dir_url(__FILE__));
-define('TICKEFIC_PLUGIN_PATH', plugin_dir_path(__FILE__));
-
-add_action('plugins_loaded', 'tickefic_plugin_init');
 /**
- * Load localization files
- *
- * @return void
+ * Security check to prevent direct file access.
  */
-function tickefic_plugin_init()
-{
-    load_plugin_textdomain('tickefic', false, dirname(plugin_basename(__FILE__)) . '/languages');
-}
+defined( 'ABSPATH' ) || die( 'No script kiddies please!' );
 
+/**
+ * Plugin Constants
+ */
+define( 'TICKEFIC_VERSION', '1.0.0' );
+define( 'TICKEFIC_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
+define( 'TICKEFIC_PLUGIN_PATH', plugin_dir_path( __FILE__ ) );
+
+/**
+ * Include required files.
+ */
 require_once TICKEFIC_PLUGIN_PATH . 'includes/class-shortcode.php';
 require_once TICKEFIC_PLUGIN_PATH . 'includes/class-cpt.php';
+require_once TICKEFIC_PLUGIN_PATH . 'includes/class-rest-api.php';
+require_once TICKEFIC_PLUGIN_PATH . 'includes/class-roles-permissions.php';
 
-function support_dashboard_enqueue_assets()
-{
-    if (defined('WP_DEBUG') && WP_DEBUG) {
-        // Load Vite client first
-        wp_enqueue_script(
-            'support-dashboard-dev',
-            'http://localhost:5173/src/main.jsx',
-            ['wp-element'],
-            null,
-            true
-        );
+/**
+ * Load plugin text domain for translations.
+ */
+add_action( 'plugins_loaded', function() {
+    load_plugin_textdomain( 'tickefic', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+} );
 
+/**
+ * Run plugin activation hook.
+ */
+register_activation_hook( __FILE__, 'tickefic_activate_plugin' );
 
-        // Add type="module"
-        add_filter('script_loader_tag', function ($tag, $handle, $src) {
-            if (in_array($handle, ['vite-client', 'support-dashboard-dev'], true)) {
-                return '<script type="module" src="' . esc_url($src) . '"></script>';
+/**
+ * Enqueue frontend scripts and styles.
+ */
+add_action( 'wp_enqueue_scripts', 'support_dashboard_enqueue_assets' );
+function support_dashboard_enqueue_assets() {
+    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+        wp_enqueue_script( 'support-dashboard-dev', 'http://localhost:5173/src/main.jsx', array( 'wp-element' ), null, true );
+
+        add_filter( 'script_loader_tag', function( $tag, $handle, $src ) {
+            if ( in_array( $handle, array( 'vite-client', 'support-dashboard-dev' ), true ) ) {
+                return '<script type="module" src="' . esc_url( $src ) . '"></script>';
             }
             return $tag;
-        }, 10, 3);
+        }, 10, 3 );
     } else {
-        // Production build
-        wp_enqueue_script(
-            'support-dashboard-app',
-            plugin_dir_url(__FILE__) . 'assets/build/app.js',
-            ['wp-element'],
-            null,
-            true
-        );
+        wp_enqueue_script( 'support-dashboard-app', TICKEFIC_PLUGIN_URL . 'assets/build/app.js', array( 'wp-element' ), TICKEFIC_VERSION, true );
     }
 
-    // enqueue assets/js/script.js 
-    wp_enqueue_script(
-        'tickefic-frontend-script',
-        TICKEFIC_PLUGIN_URL . 'assets/js/script.js',
-        ['jquery'],
-        TICKEFIC_VERSION,
-        true
-    );
-
-    wp_localize_script('tickefic-frontend-script', 'SupportDashboard', [
-        'nonce' => wp_create_nonce('wp_rest')
-    ]);
+    wp_enqueue_script( 'tickefic-frontend-script', TICKEFIC_PLUGIN_URL . 'assets/js/script.js', array( 'jquery' ), TICKEFIC_VERSION, true );
+    wp_localize_script( 'tickefic-frontend-script', 'SupportDashboard', array(
+        'nonce' => wp_create_nonce( 'wp_rest' ),
+    ) );
 }
-add_action('wp_enqueue_scripts', 'support_dashboard_enqueue_assets');
 
-// Upon plugin activation, create a new page and set the shortcode
-function tickefic_activate_plugin()
-{
-    // Check if the page already exists
-    $page = get_page_by_title('User Dashboard');
+/**
+ * Register ticket taxonomy.
+ */
+add_action( 'init', 'tickefic_register_ticket_taxonomy' );
+function tickefic_register_ticket_taxonomy() {
+    register_taxonomy( 'tickefic_cat', array( 'tickefic_ticket' ), array(
+        'hierarchical'      => true,
+        'labels'            => array( 'name' => __( 'Ticket Categories', 'tickefic' ) ),
+        'show_ui'           => true,
+        'show_admin_column' => true,
+        'show_in_rest'      => true,
+    ) );
+}
 
-    if (! $page) {
-        // Create post object
-        $page_data = [
+/**
+ * Add custom columns to ticket post list.
+ */
+add_filter( 'manage_tickefic_ticket_posts_columns', 'add_tickefic_ticket_columns' );
+function add_tickefic_ticket_columns( $columns ) {
+    $columns['tickefic_priority'] = __( 'Priority', 'tickefic' );
+    $columns['tickefic_status']   = __( 'Status', 'tickefic' );
+    return $columns + array( 'id' => __( 'ID', 'tickefic' ) );
+}
+
+/**
+ * Display custom column content for tickets.
+ */
+add_action( 'manage_tickefic_ticket_posts_custom_column', 'custom_tickefic_ticket_column_content', 10, 2 );
+function custom_tickefic_ticket_column_content( $column, $post_id ) {
+    if ( 'id' === $column ) {
+        echo esc_html( $post_id );
+    }
+    if ( 0 === strpos( $column, 'tickefic_' ) ) {
+        echo esc_html( ucfirst( get_post_meta( $post_id, $column, true ) ) );
+    }
+}
+
+/**
+ * Make tickefic meta keys publicly accessible.
+ */
+add_filter( 'is_protected_meta', function( $protected, $meta_key ) {
+    return ( 0 === strpos( $meta_key, 'tickefic_' ) ) ? false : $protected;
+}, 10, 2 );
+
+/**
+ * Create User Dashboard page on plugin activation.
+ */
+function tickefic_activate_plugin() {
+    $dashboard_page = new WP_Query( array(
+        'post_type'      => 'page',
+        'title'          => 'User Dashboard',
+        'posts_per_page' => 1,
+    ) );
+
+    if ( ! $dashboard_page->have_posts() ) {
+        wp_insert_post( array(
             'post_title'   => 'User Dashboard',
             'post_content' => '[tickefic_user_dashboard]',
             'post_status'  => 'publish',
             'post_type'    => 'page',
+        ) );
+    }
+}
+
+/*
+* Register Ticket Meta Fields for REST API
+*/
+add_action( 'init', 'register_metaboxes_for_tickefic_tickets' );
+
+function register_metaboxes_for_tickefic_tickets() {
+    // Register Ticket Meta Fields
+    $meta_fields = [
+            'tickefic_priority'       => 'string',
+            'tickefic_status'         => 'string',
+            'tickefic_assigned_agent' => 'integer',
         ];
 
-        // Insert the post into the database
-        wp_insert_post($page_data);
-    }
-}
-// register_activation_hook(__FILE__, 'tickefic_activate_plugin');
-
-// Add new role to assign 'agent' role
-function tickefic_add_agent_role()
-{
-    add_role('agent', __('Agent', 'tickefic'), [
-        'read'         => true,
-        'edit_posts'   => false,
-        'delete_posts' => false,
-    ]);
-}
-register_activation_hook(__FILE__, 'tickefic_add_agent_role');
-
-function custom_api_check_user_login() {
-    if ( is_user_logged_in() ) {
-        // Get the current user object for more details
-        $current_user = wp_get_current_user();
-        return new WP_REST_Response( array(
-            'logged_in' => true,
-            'user' => [
-                'name'  => $current_user->display_name,
-                'email' => $current_user->user_email
-            ],
-        ), 200 );
-    } else {
-        return new WP_REST_Response( array(
-            'logged_in' => false,
-            'user' => [
-                'name'  => 'Invalid User',
-                'email' => 'Invalid Email'
-            ],
-        ), 200 );
+    foreach ($meta_fields as $key => $type) {
+        register_post_meta('tickefic_ticket', $key, [
+            'type'          => $type,
+            'single'        => true,
+            'show_in_rest'  => true,
+            'auth_callback' => function() { return is_user_logged_in(); },
+        ]);
     }
 }
 
-add_action( 'rest_api_init', function () {
-    register_rest_route( 'tickefic/v1', '/user-status', array(
-        'methods' => 'GET',
-        'callback' => 'custom_api_check_user_login',
-        'permission_callback' => '__return_true', // Publicly accessible to check status
-    ) );
+/**
+ * Register Metaboxes for Tickefic Tickets
+ */
+
+/**
+ * Add Meta Box to Ticket Edit Screen
+ *
+ * Registers the ticket details meta box on the ticket post type edit page.
+ *
+ * @since 1.0.0
+ * @return void
+ */
+add_action( 'add_meta_boxes', function() {
+    add_meta_box(
+        'tickefic_ticket_meta',
+        __( 'Ticket Details', 'tickefic' ),
+        'tickefic_render_ticket_metabox',
+        'tickefic_ticket',
+        'side',
+        'high'
+    );
 } );
 
+/**
+ * Render Meta Box HTML
+ *
+ * Displays the ticket details meta box with priority, status, and agent assignment fields.
+ *
+ * @since 1.0.0
+ * @param WP_Post $post The post object for the current ticket.
+ * @return void
+ */
+function tickefic_render_ticket_metabox( $post ) {
+    // Security: Nonce field verification required for save_post hook.
+    wp_nonce_field( 'tickefic_save_meta', 'tickefic_ticket_meta_nonce' );
 
-add_action('rest_api_init', function () {
-    register_rest_route('tickefic/v1', '/login', [
-        'methods' => 'POST',
-        'callback' => 'tickefic_rest_login',
-        'permission_callback' => '__return_true',
-    ]);
-});
 
-function tickefic_rest_login($request) {
-    $creds = [
-        'user_login'    => $request->get_param('username'),
-        'user_password' => $request->get_param('password'),
-        'remember'      => true,
-    ];
+    $priority = get_post_meta( $post->ID, 'tickefic_priority', true ) ?: 'normal';
+    $status   = get_post_meta( $post->ID, 'tickefic_status', true ) ?: 'open';
+    $agent    = get_post_meta( $post->ID, 'tickefic_assigned_agent', true ) ?: 0;
 
-    $user = wp_signon($creds, false);
+    ?>
+    <div class="tickefic-meta-wrapper">
+        <p>
+            <label class="post-attributes-label" for="tickefic_priority">
+                <strong><?php esc_html_e( 'Priority', 'tickefic' ); ?></strong>
+            </label><br>
+            <select name="tickefic_priority" id="tickefic_priority" class="widefat">
+                <option value="low" <?php selected( $priority, 'low' ); ?>>
+                    <?php esc_html_e( 'Low', 'tickefic' ); ?>
+                </option>
+                <option value="normal" <?php selected( $priority, 'normal' ); ?>>
+                    <?php esc_html_e( 'Normal', 'tickefic' ); ?>
+                </option>
+                <option value="high" <?php selected( $priority, 'high' ); ?>>
+                    <?php esc_html_e( 'High', 'tickefic' ); ?>
+                </option>
+            </select>
+        </p>
 
-    if (is_wp_error($user)) {
-        // This sends a proper JSON error response
-        wp_send_json_error([
-            'message' => __('Invalid credentials.', 'tickefic')
-        ], 403);
+        <p>
+            <label class="post-attributes-label" for="tickefic_status">
+                <strong><?php esc_html_e( 'Status', 'tickefic' ); ?></strong>
+            </label><br>
+            <select name="tickefic_status" id="tickefic_status" class="widefat">
+                <option value="open" <?php selected( $status, 'open' ); ?>>
+                    <?php esc_html_e( 'Open', 'tickefic' ); ?>
+                </option>
+                <option value="in_progress" <?php selected( $status, 'in_progress' ); ?>>
+                    <?php esc_html_e( 'In Progress', 'tickefic' ); ?>
+                </option>
+                <option value="closed" <?php selected( $status, 'closed' ); ?>>
+                    <?php esc_html_e( 'Closed', 'tickefic' ); ?>
+                </option>
+            </select>
+        </p>
+
+        <p>
+            <label class="post-attributes-label" for="tickefic_assigned_agent">
+                <strong><?php esc_html_e( 'Assigned Agent', 'tickefic' ); ?></strong>
+            </label><br>
+            <select name="tickefic_assigned_agent" id="tickefic_assigned_agent" class="widefat">
+                <option value="0" <?php selected( $agent, 0 ); ?>>
+                    <?php esc_html_e( 'Unassigned', 'tickefic' ); ?>
+                </option>
+                <?php
+                $users = get_users( array( 'role__in' => array( 'agent', 'administrator' ) ) );
+                foreach ( $users as $user ) :
+                    ?>
+                    <option value="<?php echo esc_attr( $user->ID ); ?>" <?php selected( $agent, $user->ID ); ?>>
+                        <?php echo esc_html( $user->display_name ); ?>
+                    </option>
+                    <?php
+                endforeach;
+                ?>
+            </select>
+        </p>
+    </div>
+    <?php
+}
+
+
+/**
+ * Save Meta Box Data
+ *
+ * Handles saving ticket details meta box data with nonce verification,
+ * autosave checks, and proper capability checks.
+ *
+ * @since 1.0.0
+ * @param int $post_id The ID of the post being saved.
+ * @return void
+ */
+add_action( 'save_post', function( $post_id ) {
+    // 1. Verify Nonce
+    if ( ! isset( $_POST['tickefic_ticket_meta_nonce'] ) || ! wp_verify_nonce( $_POST['tickefic_ticket_meta_nonce'], 'tickefic_save_meta' ) ) {
+        return;
     }
 
-    wp_set_current_user( $user->ID );
-    wp_set_auth_cookie( $user->ID, true );
+    // 2. Skip autosave and check user capabilities
+    if ( ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) || ! current_user_can( 'edit_post', $post_id ) ) {
+        return;
+    }
 
-    // This sends a proper JSON success response
-    return new WP_REST_Response([
-        'success' => true,
-        'user' => [
-            'id' => $user->ID,
-            'name' => $user->display_name,
-        ]
-    ], 200);
-}
+    // 3. Save ticket priority
+    if ( isset( $_POST['tickefic_priority'] ) ) {
+        update_post_meta( $post_id, 'tickefic_priority', sanitize_text_field( wp_unslash( $_POST['tickefic_priority'] ) ) );
+    }
+
+    // 4. Save ticket status
+    if ( isset( $_POST['tickefic_status'] ) ) {
+        update_post_meta( $post_id, 'tickefic_status', sanitize_text_field( wp_unslash( $_POST['tickefic_status'] ) ) );
+    }
+
+    // 5. Save assigned agent
+    if ( isset( $_POST['tickefic_assigned_agent'] ) ) {
+        update_post_meta( $post_id, 'tickefic_assigned_agent', absint( $_POST['tickefic_assigned_agent'] ) );
+    }
+} );
