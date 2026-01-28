@@ -3,7 +3,6 @@ import apiFetch from "@wordpress/api-fetch";
 import CreateTicket from "./components/CreateTicket";
 import ListTicket from "./components/ListTicket";
 import User from "./components/User";
-import "./App.css";
 
 export default function App() {
   const [tickets, setTickets] = useState([]);
@@ -22,7 +21,7 @@ export default function App() {
   // 1. Fetch User Status
   useEffect(() => {
     apiFetch({
-      path: `${SupportDashboard.api_url}tickefic/v1/user-status`,
+      path: `/tickefic/v1/user-status`,
       method: "GET",
       headers: { "X-WP-Nonce": window.SupportDashboard?.nonce },
     })
@@ -39,7 +38,7 @@ export default function App() {
     setLoading(true);
 
     apiFetch({
-      path: `${SupportDashboard.api_url}wp/v2/tickefic/?_embed&page=${currentPage}&per_page=${perPage}&tickefic_status=${activeTab}`,
+      path: `/wp/v2/tickefic/?_embed&page=${currentPage}&per_page=${perPage}&tickefic_status=${activeTab}`,
       parse: false,
       headers: { "X-WP-Nonce": window.SupportDashboard?.nonce },
     })

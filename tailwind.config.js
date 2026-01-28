@@ -1,9 +1,8 @@
 export default {
   content: [
     './src/**/*.{js,jsx}',
+    './includes/*.php',
     './**/*.php',
-    './src/*.{js,jsx}',
-    './includes/*.php'
   ],
   theme: {
     extend: {},

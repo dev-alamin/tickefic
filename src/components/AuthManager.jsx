@@ -21,7 +21,7 @@ const AuthManager = () => {
 
     try {
       const response = await apiFetch({
-        path: `${SupportDashboard.api_url}tickefic/v1/login`,
+        path: `/tickefic/v1/login`,
         method: "POST",
         data: {
           username: credentials.username,

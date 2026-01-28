@@ -75,8 +75,8 @@ function support_dashboard_enqueue_assets() {
         $handle = 'support-dashboard-dev';
         wp_enqueue_script( $handle, 'http://localhost:5173/src/main.jsx', array( 'wp-element' ), null, true );
     } else {
-        wp_enqueue_style( 'support-dashboard-style', TICKEFIC_PLUGIN_URL . 'build/assets/index-j4ukVmjD.css', array(), TICKEFIC_VERSION );
-        wp_enqueue_script( $handle, TICKEFIC_PLUGIN_URL . 'dist/assets/build/app.js', array( 'wp-element', 'wp-i18n', 'wp-api-fetch' ), TICKEFIC_VERSION, true );
+        wp_enqueue_style( 'support-dashboard-style', TICKEFIC_PLUGIN_URL . 'assets/build/app.css', array(), TICKEFIC_VERSION );
+        wp_enqueue_script( $handle, TICKEFIC_PLUGIN_URL . 'assets/build/app.js', array( 'wp-element', 'wp-i18n', 'wp-api-fetch' ), TICKEFIC_VERSION, true );
     }
 
     // ALWAYS localize to the main app handle so the React app can see it

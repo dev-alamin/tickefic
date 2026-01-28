@@ -1,0 +1,12 @@
+{
+  "src/main.jsx": {
+    "file": "build/app.js",
+    "name": "main",
+    "src": "src/main.jsx",
+    "isEntry": true
+  },
+  "style.css": {
+    "file": "build/app.css",
+    "src": "style.css"
+  }
+}

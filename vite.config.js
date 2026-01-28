@@ -3,8 +3,8 @@ import { defineConfig } from 'vite';
 export default defineConfig({
   base: './',
   build: {
-    outDir: 'dist',
-    assetsDir: 'assets/build', // 👈 folder structure
+    outDir: 'assets',
+    assetsDir: 'build/build', // 👈 folder structure
     emptyOutDir: true,
     manifest: true,
     rollupOptions: {
@@ -19,8 +19,8 @@ export default defineConfig({
         name: 'TickeficApp',
 
         // 👇 deterministic filenames
-        entryFileNames: 'assets/build/app.js',
-        assetFileNames: 'assets/build/app.[ext]',
+        entryFileNames: 'build/app.js',
+        assetFileNames: 'build/app.[ext]',
 
         globals: {
           '@wordpress/element': 'wp.element',
@@ -29,5 +29,11 @@ export default defineConfig({
         },
       },
     },
+    lib: {
+    entry: 'src/main.jsx',
+    formats: ['iife'],
+    name: 'TickeficApp',
+    fileName: 'app'
+  },
   },
 });
