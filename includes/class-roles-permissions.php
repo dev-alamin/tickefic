@@ -34,9 +34,15 @@ class Roles_Permissions {
      * Grant capabilities to subscriber role
      */
     public function grant_subscriber_capabilities() {
-        $role = get_role( 'subscriber' );
+        $role = get_role( 'subscriber', 'customer' );
         if ( $role ) {
-            $capabilities = [ 'edit_posts', 'publish_posts', 'edit_tickefic_ticket', 'publish_tickefic_tickets' ];
+            $capabilities = [ 
+                'edit_posts', 
+                'publish_posts', 
+                'edit_tickefic_ticket', 
+                'publish_tickefic_tickets',
+                'moderate_comments'
+            ];
             foreach ( $capabilities as $cap ) {
                 $role->add_cap( $cap );
             }
