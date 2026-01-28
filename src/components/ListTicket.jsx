@@ -223,7 +223,7 @@ export default function ListTicket({
           <button
             disabled={currentPage === 1 || loading}
             onClick={() => onPageChange(currentPage - 1)}
-            className="p-4 rounded-xl bg-white border border-slate-200 hover:text-blue-600 disabled:opacity-40"
+            className="py-2 px-4 rounded-xl bg-white border border-slate-200 hover:text-blue-600 disabled:opacity-40"
           >
             ←
           </button>
@@ -239,7 +239,7 @@ export default function ListTicket({
           <button
             disabled={currentPage === totalPages || loading}
             onClick={() => onPageChange(currentPage + 1)}
-            className="p-4 rounded-xl bg-white border border-slate-200 hover:text-blue-600 disabled:opacity-40"
+            className="py-2 px-4 rounded-xl bg-white border border-slate-200 hover:text-blue-600 disabled:opacity-40"
           >
             →
           </button>

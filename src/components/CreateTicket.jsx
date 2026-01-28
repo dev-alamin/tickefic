@@ -62,7 +62,7 @@ const CreateTicket = ({ onTicketCreated }) => {
   return (
     <div className="max-w-2xl mb-8">
       {!isOpen ? (
-        <button onClick={() => setIsOpen(true)} className="w-[300px] py-2 rounded-xl flex items-center justify-center gap-2 text-slate-600 border border-slate-200 hover:border-blue-400 hover:bg-blue-50 transition-all group">
+        <button onClick={() => setIsOpen(true)} className="w-[300px] py-2 px-6 rounded-xl flex items-center justify-center gap-2 text-slate-600 border border-slate-200 hover:border-blue-400 hover:bg-blue-50 transition-all group">
           <span className="text-xl group-hover:rotate-90 transition-transform">＋</span>
           <span className="font-semibold">{__("Open a New Support Ticket", "tickefic")}</span>
         </button>
