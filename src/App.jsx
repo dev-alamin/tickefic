@@ -22,7 +22,7 @@ export default function App() {
   // 1. Fetch User Status
   useEffect(() => {
     apiFetch({
-      path: "/tickefic/v1/user-status",
+      path: `${SupportDashboard.api_url}tickefic/v1/user-status`,
       method: "GET",
       headers: { "X-WP-Nonce": window.SupportDashboard?.nonce },
     })
@@ -39,7 +39,7 @@ export default function App() {
     setLoading(true);
 
     apiFetch({
-      path: `/wp/v2/tickefic/?_embed&page=${currentPage}&per_page=${perPage}&tickefic_status=${activeTab}`,
+      path: `${SupportDashboard.api_url}wp/v2/tickefic/?_embed&page=${currentPage}&per_page=${perPage}&tickefic_status=${activeTab}`,
       parse: false,
       headers: { "X-WP-Nonce": window.SupportDashboard?.nonce },
     })

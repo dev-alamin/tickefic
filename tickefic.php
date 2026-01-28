@@ -82,7 +82,7 @@ function support_dashboard_enqueue_assets() {
     // ALWAYS localize to the main app handle so the React app can see it
     wp_localize_script( $handle, 'SupportDashboard', array(
         'nonce'   => wp_create_nonce( 'wp_rest' ),
-        'api_url' => esc_url_raw( rest_url( 'support/v1' ) ),
+        'api_url' => esc_url_raw( rest_url() ),
     ) );
 }
 
