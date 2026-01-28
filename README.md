@@ -5,6 +5,7 @@ Overview
 --------
 
 A lightweight, modern ticketing system for WordPress. Logged-in users manage tickets via a React-powered frontend dashboard, while administrators handle requests through the native WordPress backoffice.
+![User dashbaord screenshot](https://shaliktheme.com/wp-content/uploads/2026/01/tickefic-user-dashboard-demo.png)
 
 Key Features
 ------------
